@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мій Гаманець - Дашборд</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary: #4CAF50; --bg: #f4f7f6; --text: #333; --card-bg: #fff; }
+        body { font-family: 'Segoe UI', Tahoma, Verdana, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+
+        .card { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 20px;}
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: #555; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+        button { width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background-color: #45a049; }
+        .btn-secondary { background-color: #607D8B; padding: 10px; font-size: 14px; }
+        .btn-secondary:hover { background-color: #455A64; }
+        .btn-danger { background-color: #F44336; width: auto; padding: 10px 20px;}
+        .btn-danger:hover { background-color: #d32f2f; }
+
+        /* УНІВЕРСАЛЬНА КНОПКА ВИДАЛЕННЯ */
+        .btn-icon-delete {
+            background: transparent; border: 1px solid rgba(244, 67, 54, 0.5); color: #F44336;
+            width: 26px; height: 26px; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center;
+            cursor: pointer; font-size: 10px; transition: 0.3s; padding: 0; flex-shrink: 0;
+        }
+        .btn-icon-delete:hover { background: #F44336; color: white; }
+        /* Темна версія для рахунків */
+        .account-item .btn-icon-delete { border-color: rgba(255,255,255,0.4); color: white; }
+        .account-item .btn-icon-delete:hover { background: #F44336; border-color: #F44336; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        th { background-color: #f9f9f9; font-weight: 600; }
+        .amount { font-weight: bold; color: #e53935; }
+
+        .error-text { color: #F44336; font-size: 14px; text-align: center; font-weight: bold; margin-top: 10px; display: none; }
+
+        /* ЕКРАН АВТОРИЗАЦІЇ */
+        #authScreen { max-width: 400px; margin: 100px auto; }
+        .auth-toggle { text-align: center; margin-top: 15px; color: #2196F3; cursor: pointer; font-size: 14px; }
+        .auth-toggle:hover { text-decoration: underline; }
+
+        /* ДАШБОРД */
+        #dashboardScreen { display: none; }
+        .header { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto 30px auto; }
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
+
+        /* БЮДЖЕТ */
+        .budget-bar-bg { width: 100%; background-color: #e0e0e0; border-radius: 10px; height: 20px; margin-top: 10px; }
+        .budget-fill { height: 100%; transition: width 0.4s; border-radius: 10px; }
+        .budget-text { display: flex; justify-content: space-between; margin-top: 5px; font-size: 14px; color: #666; }
+        .safe { background-color: #4CAF50; } .warning { background-color: #FFC107; } .danger { background-color: #F44336; }
+
+        .charts-container { display: flex; justify-content: center; height: 250px; margin-top: 20px;}
+
+        /* РАХУНКИ */
+        .accounts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px; }
+        .account-item { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; }
+        .account-item.cash { background: linear-gradient(135deg, #43A047 0%, #1B5E20 100%); }
+        .account-item h4 { margin: 0; font-size: 15px; opacity: 0.9; }
+        .account-item .balance { font-size: 20px; font-weight: bold; margin: 10px 0 0 0; }
+        .add-flex { display: flex; gap: 10px; margin-top: 15px; }
+        .add-flex input { flex: 2; }
+        .add-flex button { flex: 1; }
+
+        /* ЦІЛІ */
+        .goal-item { border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .goal-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 10px; }
+        .goal-progress-bg { background-color: #e0e0e0; height: 15px; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+        .goal-progress-fill { background-color: #2196F3; height: 100%; transition: 0.4s; }
+        .goal-actions { display: flex; gap: 10px; align-items: center; margin-top: 10px;}
+        .goal-actions input { flex: 2; padding: 8px; }
+        .goal-actions button { flex: 1; padding: 8px; font-size: 14px;}
+    </style>
+</head>
+<body>
+
+<div id="authScreen">
+    <div class="card">
+        <h2 id="authTitle" style="text-align:center;">Вхід у систему 🔐</h2>
+        <div class="form-group"><label>Email:</label><input type="email" id="authEmail" placeholder="your@email.com"></div>
+        <div class="form-group"><label>Пароль:</label><input type="password" id="authPassword" placeholder="******"></div>
+        <button id="authBtn" onclick="handleAuth()">Увійти</button>
+        <div id="authError" class="error-text">Помилка авторизації</div>
+        <div class="auth-toggle" onclick="toggleAuthMode()" id="authToggleBtn">Немає акаунту? Зареєструватися</div>
+    </div>
+</div>
+
+<div id="dashboardScreen">
+    <div class="header">
+        <div>
+            <h1 style="margin:0;">💸 Мій Гаманець</h1>
+            <p style="margin:5px 0 0 0; color:#666;">Користувач: <b id="userEmailDisplay"></b></p>
+        </div>
+        <button onclick="logout()" class="btn-danger">Вийти</button>
+    </div>
+
+    <div class="dashboard-grid">
+        <div>
+            <div class="card">
+                <h2>Налаштування Бюджету</h2>
+                <div class="form-group">
+                    <label>Мій місячний ліміт витрат (₴):</label>
+                    <input type="number" id="budgetLimitInput" value="5000" onchange="fetchTransactions()">
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Додати транзакцію</h2>
+                <form id="transactionForm">
+                    <div class="form-group">
+                        <label>Рахунок:</label>
+                        <select id="accountId" required></select>
+                    </div>
+                    <div class="form-group">
+    <label>Категорія:</label>
+    <div style="display: flex; gap: 10px;">
+        <select id="categoryId" required style="flex: 2;"></select>
+        <button type="button" class="btn-secondary" onclick="createNewCategory()" style="flex: 1;">+ Своя</button>
+        <button type="button" class="btn-danger" onclick="deleteSelectedCategory()" style="flex: 0.3; padding: 10px;" title="Видалити обрану категорію">❌</button>
+    </div>
+</div>
+                    <div class="form-group">
+                        <label>Сума (₴):</label>
+                        <input type="number" id="amount" placeholder="500" required step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Опис:</label>
+                        <input type="text" id="description" placeholder="Купив каву">
+                    </div>
+                    <button type="submit">Зберегти витрату</button>
+                    <div id="txError" class="error-text"></div>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Створити ціль 🎯</h2>
+                <div class="form-group"><input type="text" id="goalName" placeholder="Назва (напр. Ноутбук)"></div>
+                <div class="form-group"><input type="number" id="goalTarget" placeholder="Цільова сума (₴)"></div>
+                <button onclick="createNewGoal()" style="background-color: #2196F3;">Додати ціль</button>
+            </div>
+        </div>
+
+        <div>
+            <div class="card">
+                <h2>Мої Рахунки 💳</h2>
+                <div id="accountsContainer" class="accounts-grid">
+                    <p style="color:#888;">Завантаження рахунків...</p>
+                </div>
+                <div class="add-flex">
+                    <input type="text" id="newAccName" placeholder="Назва (напр. Готівка)">
+                    <input type="number" id="newAccInitial" placeholder="Баланс (₴)">
+                    <button type="button" class="btn-secondary" onclick="createNewAccount()">+ Додати</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Стан бюджету</h2>
+                <h3 id="budgetTextTitle" style="margin:0; color:#333;">Розрахунок...</h3>
+                <div class="budget-bar-bg"><div id="budgetFill" class="budget-fill safe" style="width: 0%;"></div></div>
+                <div class="budget-text">
+                    <span id="budgetSpentText">Витрачено: 0 ₴</span>
+                    <span id="budgetLimitText">Ліміт: 5000 ₴</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Аналітика витрат</h2>
+                <div class="charts-container"><canvas id="expenseChart"></canvas></div>
+                <h3 style="margin-top: 30px;">Останні операції</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Рахунок</th>
+                            <th>Категорія</th>
+                            <th>Опис</th>
+                            <th>Сума</th>
+                            <th style="width: 40px; text-align: center;">Дія</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>Мої фінансові цілі</h2>
+                <div id="goalsContainer"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://127.0.0.1:8000/api';
+
+    let isLoginMode = true;
+    let myChart = null;
+    let allTransactions = [];
+    let accounts = [];
+    const chartColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4CAF50', '#9C27B0', '#FF9800', '#00BCD4', '#E91E63'];
+
+    function toggleAuthMode() {
+        isLoginMode = !isLoginMode;
+        document.getElementById('authTitle').innerText = isLoginMode ? 'Вхід у систему 🔐' : 'Реєстрація 📝';
+        document.getElementById('authBtn').innerText = isLoginMode ? 'Увійти' : 'Створити акаунт';
+        document.getElementById('authToggleBtn').innerText = isLoginMode ? 'Немає акаунту? Зареєструватися' : 'Вже є акаунт? Увійти';
+        document.getElementById('authError').style.display = 'none';
+    }
+
+    async function handleAuth() {
+        const email = document.getElementById('authEmail').value;
+        const password = document.getElementById('authPassword').value;
+        const errorBox = document.getElementById('authError');
+
+        if (!email || !password) { errorBox.innerText = "Заповніть всі поля!"; errorBox.style.display = 'block'; return; }
+
+        try {
+            if (isLoginMode) {
+                const formData = new URLSearchParams(); formData.append('username', email); formData.append('password', password);
+                const res = await fetch(`${API_URL}/login`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData });
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('walletToken', data.access_token);
+                    localStorage.setItem('walletEmail', email);
+                    checkAuthAndLoad();
+                } else { errorBox.innerText = "Неправильний логін або пароль"; errorBox.style.display = 'block'; }
+            } else {
+                const res = await fetch(`${API_URL}/register/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+                if (res.ok) { alert("Реєстрація успішна! Тепер увійдіть."); toggleAuthMode(); }
+                else { const err = await res.json(); errorBox.innerText = err.detail || "Помилка реєстрації"; errorBox.style.display = 'block'; }
+            }
+        } catch (e) { errorBox.innerText = "Сервер не відповідає."; errorBox.style.display = 'block'; }
+    }
+
+    function logout() { localStorage.removeItem('walletToken'); localStorage.removeItem('walletEmail'); checkAuthAndLoad(); }
+
+    function checkAuthAndLoad() {
+        const token = localStorage.getItem('walletToken');
+        if (token) {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('dashboardScreen').style.display = 'block';
+            document.getElementById('userEmailDisplay').innerText = localStorage.getItem('walletEmail');
+
+            renderCategories();
+            renderGoals();
+            fetchAccounts();
+        } else {
+            document.getElementById('authScreen').style.display = 'block';
+            document.getElementById('dashboardScreen').style.display = 'none';
+        }
+    }
+
+    let categories = JSON.parse(localStorage.getItem('walletCategories')) || [ { id: 1, name: "🍕 Продукти" }, { id: 2, name: "🎬 Розваги" }, { id: 3, name: "🚗 Транспорт" } ];
+    function renderCategories() {
+        const select = document.getElementById('categoryId'); select.innerHTML = '';
+        categories.forEach(c => select.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+    }
+    function createNewCategory() {
+        const name = prompt("Назва нової категорії (напр. 👕 Одяг):");
+        if (name) {
+            const newId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
+            categories.push({ id: newId, name: name.trim() });
+            localStorage.setItem('walletCategories', JSON.stringify(categories));
+            renderCategories(); document.getElementById('categoryId').value = newId;
+        }
+    }
+    function deleteSelectedCategory() {
+        const select = document.getElementById('categoryId');
+        const selectedId = parseInt(select.value);
+
+        if (!selectedId) {
+            alert("Немає категорій для видалення!");
+            return;
+        }
+
+        const categoryName = select.options[select.selectedIndex].text;
+
+        if (confirm(`Ви впевнені, що хочете видалити категорію "${categoryName}"? (Існуючі витрати з цією категорією залишаться, але змінять назву на "Інше").`)) {
+            // Фільтрація масиву
+            categories = categories.filter(c => c.id !== selectedId);
+
+            // Збереження оновленого списку у браузері
+            localStorage.setItem('walletCategories', JSON.stringify(categories));
+
+            renderCategories();
+
+            // Оновлення таблиці та графіка, щоб вони врахували зміни
+            if (allTransactions.length > 0) {
+                updateTable(allTransactions);
+                updateChart(allTransactions);
+            }
+        }
+    }
+    async function fetchAccounts() {
+        const token = localStorage.getItem('walletToken');
+        try {
+            const res = await fetch(`${API_URL}/accounts/`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                accounts = await res.json();
+                fetchTransactions();
+            }
+        } catch (e) { console.error("Помилка завантаження рахунків", e); }
+    }
+
+    function renderAccounts() {
+        const container = document.getElementById('accountsContainer'); const select = document.getElementById('accountId');
+        container.innerHTML = ''; select.innerHTML = '';
+
+        if (accounts.length === 0) {
+            container.innerHTML = '<p style="color:#888;">У вас ще немає рахунків. Створіть перший!</p>';
+            return;
+        }
+
+        accounts.forEach(acc => {
+            const spent = allTransactions.filter(t => t.account_id === acc.id).reduce((sum, t) => sum + t.amount, 0);
+            const currentBalance = acc.initial_balance - spent;
+
+            container.innerHTML += `
+                <div class="account-item ${acc.name.toLowerCase().includes('готівка') ? 'cash' : ''}">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h4>${acc.name}</h4>
+                        <button class="btn-icon-delete" onclick="deleteAccount(${acc.id})" title="Видалити рахунок">❌</button>
+                    </div>
+                    <p class="balance">${currentBalance.toFixed(2)} ₴</p>
+                </div>`;
+            select.innerHTML += `<option value="${acc.id}">${acc.name} (${currentBalance.toFixed(2)} ₴)</option>`;
+        });
+    }
+
+    async function createNewAccount() {
+        const name = document.getElementById('newAccName').value;
+        const initial_balance = parseFloat(document.getElementById('newAccInitial').value);
+        if (name && !isNaN(initial_balance)) {
+            const token = localStorage.getItem('walletToken');
+            const res = await fetch(`${API_URL}/accounts/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ name, initial_balance })
+            });
+            if (res.ok) { document.getElementById('newAccName').value = ''; document.getElementById('newAccInitial').value = ''; fetchAccounts(); }
+        }
+    }
+
+    async function deleteAccount(id) {
+        if (!confirm("Видалити рахунок? Всі його транзакції також зникнуть!")) return;
+        const token = localStorage.getItem('walletToken');
+        try {
+            const res = await fetch(`${API_URL}/accounts/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) fetchAccounts();
+        } catch (e) { console.error(e); }
+    }
+
+    async function fetchTransactions() {
+        const token = localStorage.getItem('walletToken');
+        try {
+            const res = await fetch(`${API_URL}/transactions/`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.status === 401) { logout(); return; }
+            allTransactions = await res.json();
+
+            renderAccounts();
+            updateTable(allTransactions);
+            updateChart(allTransactions);
+            updateBudget(allTransactions);
+        } catch (e) { console.error(e); }
+    }
+
+    document.getElementById('transactionForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const errorBox = document.getElementById('txError'); errorBox.style.display = 'none';
+        if (!document.getElementById('accountId').value) { errorBox.innerText = "Створіть рахунок!"; errorBox.style.display = 'block'; return; }
+
+        const data = {
+            account_id: parseInt(document.getElementById('accountId').value),
+            category_id: parseInt(document.getElementById('categoryId').value),
+            amount: parseFloat(document.getElementById('amount').value),
+            description: document.getElementById('description').value
+        };
+        try {
+            const res = await fetch(`${API_URL}/transactions/`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('walletToken')}` }, body: JSON.stringify(data)
+            });
+            if (res.ok) { document.getElementById('amount').value = ''; document.getElementById('description').value = ''; fetchTransactions(); }
+            else { const err = await res.json(); errorBox.innerText = err.detail[0]?.msg || 'Помилка'; errorBox.style.display = 'block'; }
+        } catch (e) { errorBox.innerText = "Помилка сервера"; errorBox.style.display = 'block'; }
+    });
+
+    // ВИДАЛЕННЯ ТРАНЗАКЦІЇ
+    async function deleteTransaction(id) {
+        if (!confirm("Видалити цю транзакцію? Гроші повернуться на рахунок.")) return;
+        const token = localStorage.getItem('walletToken');
+        try {
+            const res = await fetch(`${API_URL}/transactions/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) fetchTransactions(); // Оновлення балансу і таблиці автоматично
+        } catch (e) { console.error(e); }
+    }
+
+    function updateBudget(transactions) {
+        const limit = parseFloat(document.getElementById('budgetLimitInput').value) || 0;
+        const totalSpent = transactions.reduce((sum, t) => sum + t.amount, 0);
+        let percentage = limit > 0 ? (totalSpent / limit) * 100 : 100;
+
+        document.getElementById('budgetSpentText').innerText = `Витрачено: ${totalSpent.toFixed(2)} ₴`;
+        document.getElementById('budgetLimitText').innerText = `Ліміт: ${limit.toFixed(2)} ₴`;
+
+        const titleElement = document.getElementById('budgetTextTitle');
+        if (totalSpent > limit) { titleElement.innerText = `⚠️ Перевищено на ${(totalSpent - limit).toFixed(2)} ₴!`; titleElement.style.color = '#F44336'; }
+        else { titleElement.innerText = `В межах норми (Залишок: ${(limit - totalSpent).toFixed(2)} ₴)`; titleElement.style.color = '#4CAF50'; }
+
+        const fill = document.getElementById('budgetFill');
+        fill.style.width = `${percentage > 100 ? 100 : percentage}%`;
+        fill.className = 'budget-fill ' + (percentage >= 90 ? 'danger' : percentage >= 75 ? 'warning' : 'safe');
+    }
+
+    function updateTable(transactions) {
+        const tbody = document.getElementById('transactionsTableBody'); tbody.innerHTML = '';
+        transactions.slice(-6).reverse().forEach(t => {
+            const accName = accounts.find(a => a.id === t.account_id)?.name || `Рахунок видалено`;
+            const catName = categories.find(c => c.id === t.category_id)?.name || `Інше`;
+            tbody.innerHTML += `
+                <tr>
+                    <td><small style="color:#888">${accName}</small></td>
+                    <td>${catName}</td>
+                    <td>${t.description || '-'}</td>
+                    <td class="amount">-${t.amount.toFixed(2)} ₴</td>
+                    <td style="text-align: center;"><button class="btn-icon-delete" onclick="deleteTransaction(${t.id})" title="Видалити">❌</button></td>
+                </tr>`;
+        });
+    }
+
+    function updateChart(transactions) {
+        const sums = {};
+        transactions.forEach(t => { const catName = categories.find(c => c.id === t.category_id)?.name || "Інше"; sums[catName] = (sums[catName] || 0) + t.amount; });
+        if (myChart) myChart.destroy();
+        myChart = new Chart(document.getElementById('expenseChart').getContext('2d'), {
+            type: 'doughnut',
+            data: { labels: Object.keys(sums), datasets: [{ data: Object.values(sums), backgroundColor: Object.keys(sums).map((_, i) => chartColors[i % chartColors.length]) }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+        });
+    }
+
+    let goals = JSON.parse(localStorage.getItem('walletGoals')) || [];
+    function renderGoals() {
+        const container = document.getElementById('goalsContainer');
+        container.innerHTML = goals.length === 0 ? '<p style="color:#888; text-align:center;">Немає цілей.</p>' : '';
+        goals.forEach((goal, i) => {
+            const pct = Math.min((goal.current / goal.target) * 100, 100).toFixed(1), isDone = goal.current >= goal.target;
+
+            container.innerHTML += `
+                <div class="goal-item">
+                    <div class="goal-header">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            ${goal.name} ${isDone ? '🏆' : ''}
+                        </span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span>${goal.current} / ${goal.target} ₴ (${pct}%)</span>
+                            <button class="btn-icon-delete" onclick="deleteGoal(${i})" title="Видалити ціль">❌</button>
+                        </div>
+                    </div>
+                    <div class="goal-progress-bg">
+                        <div class="goal-progress-fill" style="width: ${pct}%; background-color: ${isDone ? '#4CAF50' : '#2196F3'}"></div>
+                    </div>
+                    ${!isDone ? `
+                    <div class="goal-actions">
+                        <input type="number" id="addGoal${i}" placeholder="Скільки?">
+                        <button style="background-color: #2196F3;" onclick="addFundsToGoal(${i})">+ Поповнити</button>
+                    </div>` : `<p style="color:#4CAF50; margin:10px 0 0 0; font-weight: bold;">Досягнуто!</p>`}
+                </div>`;
+        });
+    }
+
+    function createNewGoal() {
+        const name = document.getElementById('goalName').value, target = parseFloat(document.getElementById('goalTarget').value);
+        if (name && target > 0) { goals.push({ name, target, current: 0 }); localStorage.setItem('walletGoals', JSON.stringify(goals)); renderGoals(); document.getElementById('goalName').value = ''; document.getElementById('goalTarget').value = ''; }
+    }
+    function addFundsToGoal(i) {
+        const amount = parseFloat(document.getElementById(`addGoal${i}`).value);
+        if (amount > 0) { goals[i].current += amount; localStorage.setItem('walletGoals', JSON.stringify(goals)); renderGoals(); }
+    }
+    function deleteGoal(i) {
+        if (confirm("Видалити цю ціль?")) { goals.splice(i, 1); localStorage.setItem('walletGoals', JSON.stringify(goals)); renderGoals(); }
+    }
+
+    checkAuthAndLoad();
+</script>
+
+</body>
+</html>
